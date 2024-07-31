@@ -10,10 +10,10 @@ python3 -m venv venv
 pip install -r requirements.txt
 ```
 
-If you're using Docker to run Redis Stack, start the container using docker-compose or just create a redis running locally at port 6379
+If you're using Docker to run Redis Stack, start the container using docker compose or just create a redis running locally at port 6379
 
 ```bash
-docker-compose up -d
+docker compose up -d # or docker-compose up -d when using old cli
 ```
 
 Then start the app:

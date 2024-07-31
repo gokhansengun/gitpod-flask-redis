@@ -1,5 +1,12 @@
 from flask import Flask, render_template
 import redis
+import random
+import time
+
+from opentelemetry import trace
+
+# Acquire a tracer
+tracer = trace.get_tracer("sampleapp.tracer")
 
 app = Flask(__name__)
 
@@ -16,24 +23,42 @@ COUNTER_KEY_NAME = "mycounter"
 
 @app.route("/incr")
 def incr():
-    # Atomically add one to the counter in Redis.
-    # If the key doesn't exist, Redis will create it with
-    # an initial value of 1.
-    count = r.incrby(COUNTER_KEY_NAME, 1)
-    return { "count": count }
+    with tracer.start_as_current_span("outer-job") as outerspan:
+        count = r.incrby(COUNTER_KEY_NAME, 1)
+        outerspan.set_attribute("counter.value", count)
+
+        # add a random delay between 20 to 80 ms to simulate a slow request
+        time.sleep(random.uniform(0.02, 0.08))
+
+        with tracer.start_as_current_span("inner-job") as innerspan:
+            # add a random delay between 10 to 30 ms to simulate a slow request
+            time.sleep(random.uniform(0.01, 0.03))
+
+        return { "count": count }
 
 @app.route("/reset")
 def reset():
-    # Reset by just deleting the key from Redis.
-    r.delete(COUNTER_KEY_NAME)
-    return { "count": 0 }
+    with tracer.start_as_current_span("reset") as samplespan:
+        # Reset by just deleting the key from Redis.
+        count = r.get(COUNTER_KEY_NAME)
+        samplespan.set_attribute("reset.atvalue", count)
+        r.delete(COUNTER_KEY_NAME)
+
+        # add a random delay between 20 to 80 ms to simulate a slow request
+        time.sleep(random.uniform(0.02, 0.08))
+
+        return { "count": 0 }
 
 @app.route("/")
 def home():
-    # Get the current counter value.
-    count = r.get(COUNTER_KEY_NAME)
-    if count is None:
-        count = 0
+    with tracer.start_as_current_span("home") as samplespan:
+        # Get the current counter value.
+        count = r.get(COUNTER_KEY_NAME)
+        if count is None:
+            count = 0
 
-    # Render the home page with the current counter value.
-    return render_template('homepage.html', count = count)
+        # Render the home page with the current counter value.
+        return render_template('homepage.html', count = count)
+
+if __name__ == "__main__":
+    app.run(port=5001)

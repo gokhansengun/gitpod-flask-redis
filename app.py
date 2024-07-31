@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, request, render_template
 import redis
 import random
 import time
@@ -48,6 +48,17 @@ def reset():
         time.sleep(random.uniform(0.02, 0.08))
 
         return { "count": 0 }
+    
+@app.route("/emit-error")
+def emit_error():
+    reason = request.args.get('reason', 'unknown')
+
+    with tracer.start_as_current_span("emit-error") as samplespan:
+        # Simulate an error by dividing by zero.
+        count = r.get(COUNTER_KEY_NAME)
+        samplespan.set_attribute("error.atvalue", count)
+
+        raise Exception(f"Error: {reason}")
 
 @app.route("/")
 def home():
@@ -61,4 +72,4 @@ def home():
         return render_template('homepage.html', count = count)
 
 if __name__ == "__main__":
-    app.run(port=5001)
+    app.run(port=5000)

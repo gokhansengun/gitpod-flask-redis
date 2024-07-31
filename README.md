@@ -3,17 +3,17 @@
 First, clone the repo, create a Python virtual environment and install dependencies:
 
 ```bash
-$ git clone https://github.com/gokhansengun/gitpod-flask-redis.git
-$ cd gitpod-flask-redis
-$ python3 -m venv venv
-$ . ./venv/bin/activate
-$ pip install -r requirements.txt
+git clone https://github.com/gokhansengun/gitpod-flask-redis.git
+cd gitpod-flask-redis
+python3 -m venv venv
+. ./venv/bin/activate
+pip install -r requirements.txt
 ```
 
 If you're using Docker to run Redis Stack, start the container using docker-compose or just create a redis running locally at port 6379
 
 ```bash
-$ docker-compose up -d
+docker-compose up -d
 ```
 
 Then start the app:
@@ -29,3 +29,4 @@ Now, open tabs in your browser for each of the following URLs:
 
 * Application: `http://127.0.0.1:5000`
 * Error endpoint: `http://127.0.0.1:5000/emit-error?reason=some-reason`
+* Create traffic with: `while true; do curl http://127.0.0.1:5001/incr ; sleep 0.1; done`
